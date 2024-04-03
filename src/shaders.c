@@ -96,7 +96,7 @@ int compile_shaders(struct shader_asset *assets[], struct shader_program *progra
 int load_shaders(struct shader_asset *assets[])
 {
     FILE *f;
-    char c, *buffer = malloc(SHADER_SIZ * sizeof(char));
+    char c, *buffer;
     uint32_t len = 0;
 
     for (uint32_t i = 0; i < LastShaderUID; i++) {
@@ -104,7 +104,9 @@ int load_shaders(struct shader_asset *assets[])
             return -1;
         }
 
+        buffer = malloc(SHADER_SIZ * sizeof(char));
         len = 0;
+
         while ((c = fgetc(f)) != EOF) {
             len++;
             if (len > SHADER_SIZ) {
