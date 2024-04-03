@@ -97,7 +97,7 @@ int load_shaders(struct shader_asset *assets[])
 {
     FILE *f;
     char c, *buffer;
-    uint32_t len = 0;
+    uint32_t len = 0, incr = 1;
 
     for (uint32_t i = 0; i < LastShaderUID; i++) {
         if ((f = fopen(assets[i]->path, "r")) == NULL) {
@@ -105,12 +105,13 @@ int load_shaders(struct shader_asset *assets[])
         }
 
         buffer = malloc(SHADER_SIZ * sizeof(char));
-        len = 0;
+        len = 0; incr = 1;
 
         while ((c = fgetc(f)) != EOF) {
             len++;
-            if (len > SHADER_SIZ) {
-                GCC_IGN_RES(realloc(buffer, (len / SHADER_SIZ) * SHADER_SIZ + SHADER_SIZ));
+            if (len > SHADER_SIZ && (len % SHADER_SIZ) == 1) {
+                incr++;
+                buffer = (char *)realloc(buffer, SHADER_SIZ * incr);
             }
 
             buffer[len - 1] = c;

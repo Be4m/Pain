@@ -24,6 +24,10 @@ int start_graphics(int32_t w, int32_t h, const char *title, GLFWwindow **win)
         return -1;
     }
 
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
     if (!(window = glfwCreateWindow(w, h, title, NULL, NULL))) {
         return -1;
     }
