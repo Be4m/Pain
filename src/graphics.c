@@ -37,6 +37,8 @@ int start_graphics(int32_t w, int32_t h, const char *title, GLFWwindow **win)
         return -1;
     }
 
+    glEnable(GL_DEPTH_TEST);
+
     *win = window;
     return 0;
 }

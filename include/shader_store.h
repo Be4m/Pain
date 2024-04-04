@@ -6,8 +6,8 @@
 extern struct shader_asset *shader_assets[];
 extern struct shader_program *shader_programs[];
 
-enum SHADER_UID {StandardVertex, StandardFragment, LastShaderUID};
-enum SHADER_PROGRAM_UID {Standard, LastShaderProgramUID};
+enum SHADER_UID {StandardVert, StandardFrag, SimpleTextureVert, SimpleTextureFrag, LastShaderUID};
+enum SHADER_PROGRAM_UID {Standard, SimpleTexture, LastShaderProgramUID};
 
 struct shader_asset {
     const char *path;

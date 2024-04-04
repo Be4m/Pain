@@ -6,7 +6,9 @@
 
 #include <stdlib.h>
 
+#include <stb_image.h>
 #include <GLFW/glfw3.h>
+#include <cglm/cglm.h>
 
 
 void close_application(int32_t code)
@@ -19,7 +21,7 @@ void close_application(int32_t code)
 void application_run(struct app_settings *settings)
 {
     while (!glfwWindowShouldClose(settings->_window)) {
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // MAIN LOOP
         glfwPollEvents();
