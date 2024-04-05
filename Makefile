@@ -28,8 +28,6 @@ obj/shaders/%.o obj/shaders/%.o: shaders/%
 	-@ if NOT EXIST "$(@D)" $(MD) "$(@D)"
 	ld -r -b binary -o $@ $^
 
-build_shaders: $(SHADER_OBJ)
-
 pain.exe: $(OBJ)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
