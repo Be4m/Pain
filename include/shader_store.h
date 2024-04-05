@@ -3,23 +3,29 @@
 #include <stdint.h>
 
 
-extern struct shader_asset *shader_assets[];
-extern struct shader_program *shader_programs[];
+typedef struct shader_program *sprg_store_t[];
+typedef struct shader_asset *shdr_store_t[];
 
-enum SHADER_UID {StandardVert, StandardFrag, SimpleTextureVert, SimpleTextureFrag, LastShaderUID};
-enum SHADER_PROGRAM_UID {Standard, SimpleTexture, LastShaderProgramUID};
+extern shdr_store_t SHADER_ASSETS;
+extern sprg_store_t SHADER_PROGRAMS;
+
+enum SHADER_UID {SHDR_StandardVert, SHDR_StandardFrag, SHDR_SimpleTextureVert, SHDR_SimpleTextureFrag, SHDR_Last};
+enum SHADER_PROGRAM_UID {SPRG_Standard, SPRG_SimpleTexture, SPRG_Last};
 
 struct shader_asset {
-    const char *path;
+    struct {
+        const char *const start_ptr;
+        const char *const end_ptr;
+    } binary;
     char *source;
     enum SHADER_UID idt;
 };
 
 struct shader_program {
-    uint32_t shader_program;
+    int32_t obj;
     enum SHADER_PROGRAM_UID idt;
     struct {
-        enum SHADER_UID vertex;
-        enum SHADER_UID fragment;
+        const struct shader_asset *vertex;
+        const struct shader_asset *fragment;
     } shaders;
 };

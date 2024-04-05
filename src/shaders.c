@@ -9,54 +9,47 @@
 
 #include <GL/glew.h>
 
+static int compile_programs(sprg_store_t programs);
+static int load_shader_sources(shdr_store_t shaders);
 
-static struct shader_asset *get_shader_asset(struct shader_asset *assets[], enum SHADER_UID idt)
+
+int create_shader_programs(sprg_store_t programs, shdr_store_t shaders)
 {
-    for (uint32_t i = 0; i < LastShaderUID; i++) {
-        if (assets[i]->idt == idt) {
-            return assets[i];
-        }
+    if (load_shader_sources(shaders) != 0) {
+        ERR("Failed to load shader sources from the binary.");
+        return -1;
     }
 
-    return NULL;
+    if (compile_programs(programs) != 0) {
+        GL_ERR("Failed to compile shader programs.");
+        return -1;
+    }
+
+    return 0;
 }
 
-int compile_shaders(struct shader_asset *assets[], struct shader_program *programs[])
+static int compile_programs(sprg_store_t programs)
 {
     uint32_t fragment_shader, vertex_shader, shader_program;
     int32_t success;
-    struct shader_program *prog;
-    struct shader_asset *vert_shader_asset, *frag_shader_asset;
+    struct shader_program *program;
     char log[512];
 
-    for (uint32_t i = 0; i < LastShaderProgramUID; i++) {
-        prog = programs[i];
+    for (uint32_t i = 0; i < SPRG_Last; i++) {
+        program = programs[i];
 #ifdef _DEBUG
-        if (prog == NULL) {
-            ERR("Couldn't find the definition of requested shader program (%d).", i);
-            return -1;
-        }
-#endif
-
-        vert_shader_asset = get_shader_asset(assets, prog->shaders.vertex);
-        frag_shader_asset = get_shader_asset(assets, prog->shaders.fragment);
-#ifdef _DEBUG
-        if (vert_shader_asset == NULL) {
-            ERR("Could not find a shader asset associated with id: %d", prog->shaders.vertex);
-            return -1;
-        }
-        if (frag_shader_asset == NULL) {
-            ERR("Could not find a shader asset associated with id: %d", prog->shaders.fragment);
+        if (program == NULL) {
+            ERR("Couldn't find the definition of the requested shader program (%d).", i);
             return -1;
         }
 #endif
 
         vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex_shader, 1, (const char *const *)&vert_shader_asset->source, NULL);
+        glShaderSource(vertex_shader, 1, (const char *const *)&program->shaders.vertex->source, NULL);
         glCompileShader(vertex_shader);
 
         fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment_shader, 1, (const char *const *)&frag_shader_asset->source, NULL);
+        glShaderSource(fragment_shader, 1, (const char *const *)&program->shaders.fragment->source, NULL);
         glCompileShader(fragment_shader);
 
         glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
@@ -81,45 +74,56 @@ int compile_shaders(struct shader_asset *assets[], struct shader_program *progra
         glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
         if (!success) {
             glGetProgramInfoLog(shader_program, 512, NULL, log);
-            GL_ERR("Failed to link shader program (%d):\n%s", prog->idt, log);
+            GL_ERR("Failed to link shader program (%d):\n%s", program->idt, log);
             return -1;
         }
 
-        prog->shader_program = shader_program;
+        program->obj = shader_program;
+
         glDeleteShader(vertex_shader);
         glDeleteShader(fragment_shader);
+        free(program->shaders.vertex->source);
+        free(program->shaders.fragment->source);
     }
 
     return 0;
 }
 
-int load_shaders(struct shader_asset *assets[])
+static int load_shader_sources(shdr_store_t shaders)
 {
-    FILE *f;
-    char c, *buffer;
-    uint32_t len = 0, incr = 1;
+    const char *p;
+    struct shader_asset *shader;
+    char *buffer;
+    uint32_t buf_len, n_chunks;
 
-    for (uint32_t i = 0; i < LastShaderUID; i++) {
-        if ((f = fopen(assets[i]->path, "r")) == NULL) {
-            return -1;
-        }
+    for (uint32_t i = 0; i < SHDR_Last; i++) {
+        shader = shaders[i];
 
-        buffer = malloc(SHADER_SIZ * sizeof(char));
-        len = 0; incr = 1;
+        buffer = (char *)malloc(SHADER_SIZ_CHUNK);
+        buf_len = 0;
+        n_chunks = 1;
 
-        while ((c = fgetc(f)) != EOF) {
-            len++;
-            if (len > SHADER_SIZ && (len % SHADER_SIZ) == 1) {
-                incr++;
-                buffer = (char *)realloc(buffer, SHADER_SIZ * incr);
+        for (p = shader->binary.start_ptr; p != shader->binary.end_ptr; p++) {
+            // PREPROCESSING SHADER SOURCES
+            // 1) Remove carriage return characters.
+            if (*p == '\r') {
+                continue;
             }
 
-            buffer[len - 1] = c;
+            buf_len++;
+            if (buf_len > SHADER_SIZ_CHUNK && buf_len % SHADER_SIZ_CHUNK == 1) {
+                n_chunks++;
+
+                if ((buffer = realloc(buffer, n_chunks * SHADER_SIZ_CHUNK)) == NULL) {
+                    return -1;
+                }
+            }
+
+            buffer[buf_len - 1] = *p;
         }
 
-        fclose(f);
-        buffer[len] = '\0';
-        assets[i]->source = buffer;
+        buffer[buf_len] = '\0';
+        shader->source = buffer;
     }
 
     return 0;

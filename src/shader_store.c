@@ -3,27 +3,38 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define DECLARE_SHADER(x, y) struct shader_asset __##x = {.idt = x, .path = "shaders/"y}
-#define DECLARE_SHADER_VERT_FRAG_PAIR(x, y) DECLARE_SHADER(x##Vert, y".vert"); \
-    DECLARE_SHADER(x##Frag, y".frag")
-#define DECLARE_BASIC_SHADER_PROGRAM(x) struct shader_program __##x = {.idt = x, .shaders = {.vertex = x##Vert, .fragment = x##Frag}}
-#define DECLARE_SHADER_PROGRAM(x, ...) struct shader_program __##x = {.idt = x, .shaders = {__VA_ARGS__}}
+#define SHDR_BIN_SYM_PREFIX binary_shaders
+
+#define SHDR_BIN_SYM(uid, suffix) binary_shaders_##uid##_##suffix
+#define DECLARE_SHADER_ASSET(UID, uid) extern char SHDR_BIN_SYM(uid, start)[]; extern char SHDR_BIN_SYM(uid, end)[]; \
+    struct shader_asset s_##UID = {.idt = UID, .binary = {.start_ptr = (const char *const)SHDR_BIN_SYM(uid, start), .end_ptr = (const char *const)SHDR_BIN_SYM(uid, end) \
+    }, .source = NULL}
+#define DECLARE_SHADER_PROGRAM(UID, ...) struct shader_program s_##UID = {.idt = UID, .shaders = {__VA_ARGS__}, .obj = -1}
 
 
-DECLARE_SHADER_VERT_FRAG_PAIR(Standard, "standard");
-DECLARE_SHADER_VERT_FRAG_PAIR(SimpleTexture, "simple_texture");
+DECLARE_SHADER_ASSET(SHDR_StandardVert, standard_vert);
+DECLARE_SHADER_ASSET(SHDR_StandardFrag, standard_frag);
+DECLARE_SHADER_ASSET(SHDR_SimpleTextureVert, simple_texture_vert);
+DECLARE_SHADER_ASSET(SHDR_SimpleTextureFrag, simple_texture_frag);
 
-struct shader_asset *shader_assets[LastShaderUID] = {
-    [StandardVert] = &__StandardVert,
-    [StandardFrag] = &__StandardFrag,
-    [SimpleTextureVert] = &__SimpleTextureVert,
-    [SimpleTextureFrag] = &__SimpleTextureFrag
+struct shader_asset *SHADER_ASSETS[SHDR_Last] = {
+    [SHDR_StandardVert] = &s_SHDR_StandardVert,
+    [SHDR_StandardFrag] = &s_SHDR_StandardFrag,
+    [SHDR_SimpleTextureVert] = &s_SHDR_SimpleTextureVert,
+    [SHDR_SimpleTextureFrag] = &s_SHDR_SimpleTextureFrag
 };
 
-DECLARE_BASIC_SHADER_PROGRAM(Standard);
-DECLARE_BASIC_SHADER_PROGRAM(SimpleTexture);
+DECLARE_SHADER_PROGRAM(SPRG_Standard,
+    .vertex = &s_SHDR_StandardVert,
+    .fragment = &s_SHDR_StandardFrag
+);
 
-struct shader_program *shader_programs[LastShaderProgramUID] = {
-    [Standard] = &__Standard,
-    [SimpleTexture] = &__SimpleTexture
+DECLARE_SHADER_PROGRAM(SPRG_SimpleTexture,
+    .vertex = &s_SHDR_SimpleTextureVert,
+    .fragment = &s_SHDR_SimpleTextureFrag
+);
+
+struct shader_program *SHADER_PROGRAMS[SPRG_Last] = {
+    [SPRG_Standard] = &s_SPRG_Standard,
+    [SPRG_SimpleTexture] = &s_SPRG_SimpleTexture
 };

@@ -4,8 +4,7 @@
 
 #include <stdint.h>
 
-#define SHADER_SIZ 256
+#define SHADER_SIZ_CHUNK 256
 
 
-int compile_shaders(struct shader_asset *assets[], struct shader_program *programs[]);
-int load_shaders(struct shader_asset *assets[]);
+int create_shader_programs(sprg_store_t programs, shdr_store_t shaders);
