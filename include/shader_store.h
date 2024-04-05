@@ -9,8 +9,8 @@ typedef struct shader_asset *shdr_store_t[];
 extern shdr_store_t SHADER_ASSETS;
 extern sprg_store_t SHADER_PROGRAMS;
 
-enum SHADER_UID {SHDR_StandardVert, SHDR_StandardFrag, SHDR_SimpleTextureVert, SHDR_SimpleTextureFrag, SHDR_Last};
-enum SHADER_PROGRAM_UID {SPRG_Standard, SPRG_SimpleTexture, SPRG_Last};
+enum SHADER_UID {SHDR_StandardVert, SHDR_StandardFrag, SHDR_StandardTextureVert, SHDR_StandardTextureFrag, SHDR_Last};
+enum SHADER_PROGRAM_UID {SPRG_Standard, SPRG_StandardTexture, SPRG_Last};
 
 struct shader_asset {
     struct {

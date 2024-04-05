@@ -10,7 +10,7 @@ SRC=src/main.c src/application.c \
 	src/graphics.c src/shaders.c src/shader_store.c \
 	src/vendor/stb_image.c
 
-SHADERS=shaders/simple_texture.frag shaders/simple_texture.vert \
+SHADERS=shaders/standard_texture.frag shaders/standard_texture.vert \
 	shaders/standard.frag shaders/standard.vert
 
 SHADER_OBJ=$(patsubst shaders/%, obj/shaders/%.o, $(SHADERS))

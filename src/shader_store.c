@@ -14,14 +14,14 @@
 
 DECLARE_SHADER_ASSET(SHDR_StandardVert, standard_vert);
 DECLARE_SHADER_ASSET(SHDR_StandardFrag, standard_frag);
-DECLARE_SHADER_ASSET(SHDR_SimpleTextureVert, simple_texture_vert);
-DECLARE_SHADER_ASSET(SHDR_SimpleTextureFrag, simple_texture_frag);
+DECLARE_SHADER_ASSET(SHDR_StandardTextureVert, standard_texture_vert);
+DECLARE_SHADER_ASSET(SHDR_StandardTextureFrag, standard_texture_frag);
 
 struct shader_asset *SHADER_ASSETS[SHDR_Last] = {
     [SHDR_StandardVert] = &s_SHDR_StandardVert,
     [SHDR_StandardFrag] = &s_SHDR_StandardFrag,
-    [SHDR_SimpleTextureVert] = &s_SHDR_SimpleTextureVert,
-    [SHDR_SimpleTextureFrag] = &s_SHDR_SimpleTextureFrag
+    [SHDR_StandardTextureVert] = &s_SHDR_StandardTextureVert,
+    [SHDR_StandardTextureFrag] = &s_SHDR_StandardTextureFrag
 };
 
 DECLARE_SHADER_PROGRAM(SPRG_Standard,
@@ -29,12 +29,12 @@ DECLARE_SHADER_PROGRAM(SPRG_Standard,
     .fragment = &s_SHDR_StandardFrag
 );
 
-DECLARE_SHADER_PROGRAM(SPRG_SimpleTexture,
-    .vertex = &s_SHDR_SimpleTextureVert,
-    .fragment = &s_SHDR_SimpleTextureFrag
+DECLARE_SHADER_PROGRAM(SPRG_StandardTexture,
+    .vertex = &s_SHDR_StandardTextureVert,
+    .fragment = &s_SHDR_StandardTextureFrag
 );
 
 struct shader_program *SHADER_PROGRAMS[SPRG_Last] = {
     [SPRG_Standard] = &s_SPRG_Standard,
-    [SPRG_SimpleTexture] = &s_SPRG_SimpleTexture
+    [SPRG_StandardTexture] = &s_SPRG_StandardTexture
 };
