@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <GL/glew.h>
 
@@ -127,4 +128,23 @@ static int load_shader_sources(shdr_store_t shaders)
     }
 
     return 0;
+}
+
+void shader_program_load_uniform_locations(struct shader_program *program)
+{
+    struct uniform *unif;
+    _Bool first_el_found = false;
+
+    glUseProgram(program->obj);
+
+    for (uint32_t j = 0; j < UNIF_Last; j++) {
+        unif = &program->uniforms[j];
+        if (!unif->idt && !first_el_found) {
+            first_el_found = true;
+        } else if (!unif->idt && first_el_found) {
+            continue;
+        }
+
+        unif->location = glGetUniformLocation(program->obj, unif->name);
+    }
 }
