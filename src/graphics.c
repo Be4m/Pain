@@ -1,5 +1,6 @@
 #include "graphics.h"
 
+#include "application.h"
 #include "shaders.h"
 
 static void framebuffer_size_callback(GLFWwindow *window, int32_t new_width, int32_t new_height);
@@ -34,7 +35,9 @@ int start_graphics(int32_t w, int32_t h, const char *title, GLFWwindow **win)
     }
     glfwMakeContextCurrent(window);
 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_move_callback);
 
     if (glewInit() != GLEW_OK) {
         return -1;

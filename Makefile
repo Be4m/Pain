@@ -8,6 +8,7 @@ LDFLAGS=$(LIB) -mwindows
 
 SRC=src/main.c src/application.c \
 	src/graphics.c src/shaders.c src/shader_store.c \
+	src/camera.c \
 	src/vendor/stb_image.c
 
 SHADERS=shaders/standard_texture.frag shaders/standard_texture.vert \

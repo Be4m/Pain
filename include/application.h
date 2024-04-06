@@ -17,3 +17,5 @@ struct app_settings {
 void create_application(struct app_settings *settings);
 void application_run(struct app_settings *settings);
 void close_application(int32_t code);
+
+void mouse_move_callback(GLFWwindow *window, double x_pos, double y_pos);
