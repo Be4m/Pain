@@ -51,20 +51,30 @@ void application_run(struct app_settings *settings)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), NULL);
     glEnableVertexAttribArray(0);
 
-    struct shader_program *shader_prog = SHADER_PROGRAMS[SPRG_Standard];
-    shader_program_load_uniform_locations(shader_prog);
+    struct shader_program *obj_shader_prog = SHADER_PROGRAMS[SPRG_SimpleLighting];
+    struct shader_program *light_shader_prog = SHADER_PROGRAMS[SPRG_Standard];
 
-    mat4 light_model = GLM_MAT4_IDENTITY_INIT, obj_model = GLM_MAT4_IDENTITY_INIT;
-    // glm_translate(light_model, (vec3){0.3f, 1.8f, 3.0f});
-    
-    mat4 proj;
-    camera_produce_projection_matrix(&CAMERA, proj);
-    glUniformMatrix4fv(shader_prog->uniforms[UNIF_ProjMat].location, 1, GL_FALSE, (float *)proj);
+    mat4 proj; camera_produce_projection_matrix(&CAMERA, proj);
+    vec3 light_color = {0.0f, 1.0, 0.0f};
 
-    // vec3 obj_color = {1.0f, 0.0f, 0.0f};
-    // vec3 light_color = {1.0f, 1.0f, 1.0f};
-    // glUniform3fv(shader_prog->uniforms[UNIF_SimpleLighting_ObjColor].location, 1, obj_color);
-    // glUniform3fv(shader_prog->uniforms[UNIF_SimpleLighting_LightColor].location, 1, light_color);
+    glUseProgram(obj_shader_prog->obj);
+
+    mat4 obj_model = GLM_MAT4_IDENTITY_INIT;
+    glUniformMatrix4fv(obj_shader_prog->uniform_loc[UNIF_ModelMat], 1, GL_FALSE, (float *)obj_model);
+    glUniformMatrix4fv(obj_shader_prog->uniform_loc[UNIF_ProjMat], 1, GL_FALSE, (float *)proj);
+
+    vec3 obj_color = {.2f, 0.2f, 0.8f};
+    glUniform3fv(obj_shader_prog->uniform_loc[UNIF_SimpleLighting_ObjColor], 1, obj_color);
+    glUniform3fv(obj_shader_prog->uniform_loc[UNIF_SimpleLighting_LightColor], 1, light_color);
+
+    glUseProgram(light_shader_prog->obj);
+
+    mat4 light_model = GLM_MAT4_IDENTITY_INIT;
+    glm_translate(light_model, (vec3){0.3f, 1.8f, 3.0f});
+    glUniformMatrix4fv(light_shader_prog->uniform_loc[UNIF_ModelMat], 1, GL_FALSE, (float *)light_model);
+    glUniformMatrix4fv(light_shader_prog->uniform_loc[UNIF_ProjMat], 1, GL_FALSE, (float *)proj);
+
+    glUniform3fv(light_shader_prog->uniform_loc[UNIF_FragColor], 1, light_color);
 
     float last_frame = 0.0f;
 
@@ -80,16 +90,17 @@ void application_run(struct app_settings *settings)
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUniformMatrix4fv(shader_prog->uniforms[UNIF_ModelMat].location, 1, GL_FALSE, (float *)obj_model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        // glUniformMatrix4fv(shader_prog->uniforms[UNIF_ModelMat].location, 1, GL_FALSE, (float *)light_model);
-        // glDrawArrays(GL_TRIANGLES, 0, 36);
-
         // CAMERA
         mat4 view;
         camera_produce_view_matrix(&CAMERA, view);
-        glUniformMatrix4fv(shader_prog->uniforms[UNIF_ViewMat].location, 1, GL_FALSE, (float *)view);
+
+        glUseProgram(obj_shader_prog->obj);
+        glUniformMatrix4fv(obj_shader_prog->uniform_loc[UNIF_ViewMat], 1, GL_FALSE, (float *)view);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        glUseProgram(light_shader_prog->obj);
+        glUniformMatrix4fv(light_shader_prog->uniform_loc[UNIF_ViewMat], 1, GL_FALSE, (float *)view);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // MAIN LOOP
         glfwPollEvents();

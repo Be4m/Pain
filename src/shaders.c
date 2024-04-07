@@ -156,22 +156,17 @@ static int shader_store_load_sources(shdr_store_t shaders)
 
 static void shader_store_programs_load_uniform_locations(sprg_store_t programs)
 {
-    struct uniform *unif;
-    _Bool first_el_found;
+    const char *unif;
 
     for (uint32_t i = 0; i < SPRG_Last; i++) {
         glUseProgram(programs[i]->obj);
 
-        first_el_found = false;
         for (uint32_t j = 0; j < UNIF_Last; j++) {
-            unif = &programs[i]->uniforms[j];
-            if (!unif->idt && !first_el_found) {
-                first_el_found = true;
-            } else if (!unif->idt && first_el_found) {
-                continue;
+            if ((unif = programs[i]->shaders.vertex->uniforms[j]) != NULL) {
+                programs[i]->uniform_loc[j] = glGetUniformLocation(programs[i]->obj, unif);
+            } else if ((unif = programs[i]->shaders.fragment->uniforms[j]) != NULL) {
+                programs[i]->uniform_loc[j] = glGetUniformLocation(programs[i]->obj, unif);
             }
-
-            unif->location = glGetUniformLocation(programs[i]->obj, unif->name);
         }
     }
 

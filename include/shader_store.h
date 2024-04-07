@@ -9,8 +9,9 @@ typedef struct shader_asset *shdr_store_t[];
 extern shdr_store_t SHADER_ASSETS;
 extern sprg_store_t SHADER_PROGRAMS;
 
-enum SHADER_UID {SHDR_StandardVert, SHDR_StandardFrag, SHDR_StandardTextureVert, SHDR_StandardTextureFrag, SHDR_SimpleLightingFrag, SHDR_Last};
-enum SHADER_PROGRAM_UID {SPRG_Standard, SPRG_StandardTexture, SPRG_SimpleLighting, SPRG_Last};
+enum SHADER_UID {SHDR_StandardVert, SHDR_StandardFrag, SHDR_StandardTextureVert, SHDR_StandardTextureFrag, SHDR_SimpleLightingFrag,
+    SHDR_SimpleFrag, SHDR_Last};
+enum SHADER_PROGRAM_UID {SPRG_Standard, SPRG_Simple, SPRG_StandardTexture, SPRG_SimpleLighting, SPRG_Last};
 
 enum UNIFORM_UID {UNIF_ModelMat, UNIF_ViewMat, UNIF_ProjMat,
     UNIF_SimpleLighting_ObjColor, UNIF_SimpleLighting_LightColor, UNIF_FragColor, UNIF_Last};
@@ -22,12 +23,8 @@ struct shader_asset {
     } binary;
     char *source;
     enum SHADER_UID shader_uid;
-};
 
-struct uniform {
-    int32_t location;
-    const char *name;
-    enum UNIFORM_UID idt;
+    const char *uniforms[UNIF_Last];
 };
 
 struct shader_program {
@@ -38,5 +35,5 @@ struct shader_program {
         const struct shader_asset *fragment;
     } shaders;
 
-    struct uniform uniforms[UNIF_Last];
+    int32_t uniform_loc[UNIF_Last];
 };

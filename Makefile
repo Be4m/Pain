@@ -13,7 +13,8 @@ SRC=src/main.c src/application.c \
 
 SHADERS=shaders/standard_texture.frag shaders/standard_texture.vert \
 	shaders/standard.frag shaders/standard.vert \
-	shaders/simple_lighting.frag
+	shaders/simple_lighting.frag \
+	shaders/simple.frag
 
 SHADER_OBJ=$(patsubst shaders/%, obj/shaders/%.o, $(SHADERS))
 OBJ=$(patsubst src/%.c, obj/%.o, $(SRC)) $(SHADER_OBJ)
