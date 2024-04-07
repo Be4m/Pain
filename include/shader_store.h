@@ -20,7 +20,7 @@ struct shader_asset {
         const char *const end_ptr;
     } binary;
     char *source;
-    enum SHADER_UID idt;
+    enum SHADER_UID shader_uid;
 };
 
 struct uniform {
