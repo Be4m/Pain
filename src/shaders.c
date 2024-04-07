@@ -10,27 +10,31 @@
 
 #include <GL/glew.h>
 
-static int compile_programs(sprg_store_t programs);
-static int load_shader_sources(shdr_store_t shaders);
+static int shader_store_load_sources(shdr_store_t shaders);
+static int shader_store_compile_programs(sprg_store_t programs);
+static void shader_store_programs_load_uniform_locations(sprg_store_t programs);
+
 static inline const char *shader_uid2str(enum SHADER_UID idt);
 
 
 int create_shader_programs(sprg_store_t programs, shdr_store_t shaders)
 {
-    if (load_shader_sources(shaders) != 0) {
+    if (shader_store_load_sources(shaders) != 0) {
         ERR("Failed to load shader sources from the binary.");
         return -1;
     }
 
-    if (compile_programs(programs) != 0) {
+    if (shader_store_compile_programs(programs) != 0) {
         GL_ERR("Failed to compile shader programs.");
         return -1;
     }
+    
+    shader_store_programs_load_uniform_locations(programs);
 
     return 0;
 }
 
-static int compile_programs(sprg_store_t programs)
+static int shader_store_compile_programs(sprg_store_t programs)
 {
     int32_t fragment_shader, vertex_shader, shader_program;
     int32_t success;
@@ -110,7 +114,7 @@ static int compile_programs(sprg_store_t programs)
     return 0;
 }
 
-static int load_shader_sources(shdr_store_t shaders)
+static int shader_store_load_sources(shdr_store_t shaders)
 {
     const char *p;
     struct shader_asset *shader;
@@ -150,23 +154,28 @@ static int load_shader_sources(shdr_store_t shaders)
     return 0;
 }
 
-void shader_program_load_uniform_locations(struct shader_program *program)
+static void shader_store_programs_load_uniform_locations(sprg_store_t programs)
 {
     struct uniform *unif;
-    _Bool first_el_found = false;
+    _Bool first_el_found;
 
-    glUseProgram(program->obj);
+    for (uint32_t i = 0; i < SPRG_Last; i++) {
+        glUseProgram(programs[i]->obj);
 
-    for (uint32_t j = 0; j < UNIF_Last; j++) {
-        unif = &program->uniforms[j];
-        if (!unif->idt && !first_el_found) {
-            first_el_found = true;
-        } else if (!unif->idt && first_el_found) {
-            continue;
+        first_el_found = false;
+        for (uint32_t j = 0; j < UNIF_Last; j++) {
+            unif = &programs[i]->uniforms[j];
+            if (!unif->idt && !first_el_found) {
+                first_el_found = true;
+            } else if (!unif->idt && first_el_found) {
+                continue;
+            }
+
+            unif->location = glGetUniformLocation(programs[i]->obj, unif->name);
         }
-
-        unif->location = glGetUniformLocation(program->obj, unif->name);
     }
+
+    glUseProgram(0);
 }
 
 static inline const char *shader_uid2str(enum SHADER_UID idt)

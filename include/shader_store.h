@@ -12,7 +12,7 @@ extern sprg_store_t SHADER_PROGRAMS;
 enum SHADER_UID {SHDR_StandardVert, SHDR_StandardFrag, SHDR_StandardTextureVert, SHDR_StandardTextureFrag, SHDR_Last};
 enum SHADER_PROGRAM_UID {SPRG_Standard, SPRG_StandardTexture, SPRG_Last};
 
-enum UNIFORM_UID {UNIF_ModelMat, UNIF_ViewMat, UNIF_ProjMat, UNIF_Last};
+enum UNIFORM_UID {UNIF_ModelMat, UNIF_ViewMat, UNIF_ProjMat, UNIF_FragColor, UNIF_Last};
 
 struct shader_asset {
     struct {
