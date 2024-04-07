@@ -21,12 +21,8 @@ struct shader_asset {
     } binary;
     char *source;
     enum SHADER_UID shader_uid;
-};
 
-struct uniform {
-    int32_t location;
-    const char *name;
-    enum UNIFORM_UID idt;
+    const char *uniforms[UNIF_Last];
 };
 
 struct shader_program {
@@ -37,5 +33,5 @@ struct shader_program {
         const struct shader_asset *fragment;
     } shaders;
 
-    struct uniform uniforms[UNIF_Last];
+    int32_t uniform_loc[UNIF_Last];
 };
