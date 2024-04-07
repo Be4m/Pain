@@ -33,7 +33,8 @@ struct shader_asset *SHADER_ASSETS[SHDR_Last] = {
 DECLARE_SHADER_PROGRAM(SPRG_Standard,
     &s_SHDR_StandardVert, &s_SHDR_StandardFrag,
     {
-        STANDARD_UNIFORMS
+        STANDARD_UNIFORMS,
+        [UNIF_FragColor] = {.idt = UNIF_FragColor, .name = "frag_color"}
     }
 );
 

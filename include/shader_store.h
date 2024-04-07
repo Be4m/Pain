@@ -13,7 +13,7 @@ enum SHADER_UID {SHDR_StandardVert, SHDR_StandardFrag, SHDR_StandardTextureVert,
 enum SHADER_PROGRAM_UID {SPRG_Standard, SPRG_StandardTexture, SPRG_SimpleLighting, SPRG_Last};
 
 enum UNIFORM_UID {UNIF_ModelMat, UNIF_ViewMat, UNIF_ProjMat,
-    UNIF_SimpleLighting_ObjColor, UNIF_SimpleLighting_LightColor, UNIF_Last};
+    UNIF_SimpleLighting_ObjColor, UNIF_SimpleLighting_LightColor, UNIF_FragColor, UNIF_Last};
 
 struct shader_asset {
     struct {
