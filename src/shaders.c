@@ -12,6 +12,7 @@
 
 static int compile_programs(sprg_store_t programs);
 static int load_shader_sources(shdr_store_t shaders);
+static inline const char *shader_uid2str(enum SHADER_UID idt);
 
 
 int create_shader_programs(sprg_store_t programs, shdr_store_t shaders)
@@ -31,10 +32,12 @@ int create_shader_programs(sprg_store_t programs, shdr_store_t shaders)
 
 static int compile_programs(sprg_store_t programs)
 {
-    uint32_t fragment_shader, vertex_shader, shader_program;
+    int32_t fragment_shader, vertex_shader, shader_program;
     int32_t success;
     struct shader_program *program;
     char log[512];
+
+    int32_t compiled_shader_map[SHDR_Last] = { [0 ... SHDR_Last - 1] = -1};
 
     for (uint32_t i = 0; i < SPRG_Last; i++) {
         program = programs[i];
@@ -45,28 +48,40 @@ static int compile_programs(sprg_store_t programs)
         }
 #endif
 
-        vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex_shader, 1, (const char *const *)&program->shaders.vertex->source, NULL);
-        glCompileShader(vertex_shader);
+        if (compiled_shader_map[program->shaders.vertex->shader_uid] == -1) {
+            vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+            glShaderSource(vertex_shader, 1, (const char *const *)&program->shaders.vertex->source, NULL);
+            glCompileShader(vertex_shader);
 
-        fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment_shader, 1, (const char *const *)&program->shaders.fragment->source, NULL);
-        glCompileShader(fragment_shader);
+            glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
+            if (!success) {
+                glGetShaderInfoLog(vertex_shader, 512, NULL, log);
+                GL_ERR("VERTEX shader (%s) failed to compile:\n%s", shader_uid2str(program->shaders.vertex->shader_uid), log);
+                return -1;
+            }
 
-        glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(vertex_shader, 512, NULL, log);
-            GL_ERR("VERTEX shader failed to compile:\n%s", log);
-            return -1;
+            compiled_shader_map[program->shaders.vertex->shader_uid] = vertex_shader;
+        } else {
+            vertex_shader = compiled_shader_map[program->shaders.vertex->shader_uid];
         }
 
-        glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(fragment_shader, 512, NULL, log);
-            GL_ERR("FRAGMENT shader failed to compile:\n%s", log);
-            return -1;
-        }
+        if (compiled_shader_map[program->shaders.fragment->shader_uid] == -1) {
+            fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+            glShaderSource(fragment_shader, 1, (const char *const *)&program->shaders.fragment->source, NULL);
+            glCompileShader(fragment_shader);
 
+            glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
+            if (!success) {
+                glGetShaderInfoLog(fragment_shader, 512, NULL, log);
+                GL_ERR("FRAGMENT shader (%s) failed to compile:\n%s", shader_uid2str(program->shaders.fragment->shader_uid), log);
+                return -1;
+            }
+
+            compiled_shader_map[program->shaders.fragment->shader_uid] = fragment_shader;
+        } else {
+            fragment_shader = compiled_shader_map[program->shaders.fragment->shader_uid];
+        }
+        
         shader_program = glCreateProgram();
         glAttachShader(shader_program, vertex_shader);
         glAttachShader(shader_program, fragment_shader);
@@ -81,10 +96,15 @@ static int compile_programs(sprg_store_t programs)
 
         program->obj = shader_program;
 
-        glDeleteShader(vertex_shader);
-        glDeleteShader(fragment_shader);
         free(program->shaders.vertex->source);
         free(program->shaders.fragment->source);
+    }
+
+    for (uint32_t u = 0; u < SHDR_Last; u++) {
+        int32_t shader = compiled_shader_map[u];
+
+        glDeleteShader(shader);
+        glDeleteShader(shader);
     }
 
     return 0;
