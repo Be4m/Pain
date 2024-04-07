@@ -49,28 +49,22 @@ void application_run(struct app_settings *settings)
     glGenVertexArrays(1, &vertex_array_obj);
     glBindVertexArray(vertex_array_obj);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), NULL);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
-
     glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
 
-    int32_t width, height, n_channels;
-    unsigned char *img_data = stbi_load("textures/universa.jpg", &width, &height, &n_channels, 0);
-    
-    uint32_t texture_obj;
-    glGenTextures(1, &texture_obj);
-    glBindTexture(GL_TEXTURE_2D, texture_obj);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, img_data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    struct shader_program *shader_prog = SHADER_PROGRAMS[SPRG_StandardTexture];
+    struct shader_program *shader_prog = SHADER_PROGRAMS[SPRG_Standard];
     shader_program_load_uniform_locations(shader_prog);
 
-    mat4 model = GLM_MAT4_IDENTITY_INIT, proj;
+    mat4 light_model = GLM_MAT4_IDENTITY_INIT, obj_model = GLM_MAT4_IDENTITY_INIT;
+    // glm_translate(light_model, (vec3){0.3f, 1.8f, 3.0f});
+    
+    mat4 proj;
     camera_produce_projection_matrix(&CAMERA, proj);
-
-    glUniformMatrix4fv(shader_prog->uniforms[UNIF_ModelMat].location, 1, GL_FALSE, (float *)model);
     glUniformMatrix4fv(shader_prog->uniforms[UNIF_ProjMat].location, 1, GL_FALSE, (float *)proj);
+
+    // vec3 obj_color = {1.0f, 0.0f, 0.0f};
+    // vec3 light_color = {1.0f, 1.0f, 1.0f};
+    // glUniform3fv(shader_prog->uniforms[UNIF_SimpleLighting_ObjColor].location, 1, obj_color);
+    // glUniform3fv(shader_prog->uniforms[UNIF_SimpleLighting_LightColor].location, 1, light_color);
 
     float last_frame = 0.0f;
 
@@ -86,7 +80,11 @@ void application_run(struct app_settings *settings)
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glUniformMatrix4fv(shader_prog->uniforms[UNIF_ModelMat].location, 1, GL_FALSE, (float *)obj_model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        // glUniformMatrix4fv(shader_prog->uniforms[UNIF_ModelMat].location, 1, GL_FALSE, (float *)light_model);
+        // glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // CAMERA
         mat4 view;

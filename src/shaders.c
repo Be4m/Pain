@@ -148,3 +148,16 @@ void shader_program_load_uniform_locations(struct shader_program *program)
         unif->location = glGetUniformLocation(program->obj, unif->name);
     }
 }
+
+static inline const char *shader_uid2str(enum SHADER_UID idt)
+{
+    switch (idt) {
+    case SHDR_StandardVert: return "SHDR_StandardVert";
+    case SHDR_StandardFrag: return "SHDR_StandardFrag";
+    case SHDR_StandardTextureVert: return "SHDR_StandardTextureVert";
+    case SHDR_StandardTextureFrag: return "SHDR_StandardTextureFrag";
+    case SHDR_SimpleLightingFrag: return "SHDR_SimpleLightingFrag";
+    default:
+        return "Unrecognized Shader";
+    }
+}

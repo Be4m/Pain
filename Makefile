@@ -4,7 +4,7 @@ MD=mkdir
 INCLUDE=-Iinclude -Iinclude/vendor
 LIB=-Llib -lglfw3 -lgdi32 -lglew32s -lopengl32
 CFLAGS=$(INCLUDE) -std=c99 -Wall -DGLEW_STATIC -g -D_DEBUG
-LDFLAGS=$(LIB) -mwindows
+LDFLAGS=$(LIB)
 
 SRC=src/main.c src/application.c \
 	src/graphics.c src/shaders.c src/shader_store.c \
@@ -12,7 +12,8 @@ SRC=src/main.c src/application.c \
 	src/vendor/stb_image.c
 
 SHADERS=shaders/standard_texture.frag shaders/standard_texture.vert \
-	shaders/standard.frag shaders/standard.vert
+	shaders/standard.frag shaders/standard.vert \
+	shaders/simple_lighting.frag
 
 SHADER_OBJ=$(patsubst shaders/%, obj/shaders/%.o, $(SHADERS))
 OBJ=$(patsubst src/%.c, obj/%.o, $(SRC)) $(SHADER_OBJ)
