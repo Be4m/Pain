@@ -1,4 +1,5 @@
 .vscode
+.gdbinit
 obj/
 pain.exe
 lib
