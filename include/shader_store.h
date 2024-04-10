@@ -9,12 +9,14 @@ typedef struct shader_asset *shdr_store_t[];
 extern shdr_store_t SHADER_ASSETS;
 extern sprg_store_t SHADER_PROGRAMS;
 
-enum SHADER_UID {SHDR_StandardVert, SHDR_StandardFrag, SHDR_StandardTextureVert, SHDR_StandardTextureFrag, SHDR_SimpleLightingFrag,
+enum SHADER_UID {SHDR_StandardVert, SHDR_StandardFrag, SHDR_StandardTextureVert, SHDR_StandardTextureFrag, 
+    SHDR_SimpleLightingFrag, SHDR_SimpleLightingVert,
     SHDR_SimpleFrag, SHDR_Last};
 enum SHADER_PROGRAM_UID {SPRG_Standard, SPRG_Simple, SPRG_StandardTexture, SPRG_SimpleLighting, SPRG_Last};
 
-enum UNIFORM_UID {UNIF_ModelMat, UNIF_ViewMat, UNIF_ProjMat,
-    UNIF_SimpleLighting_ObjColor, UNIF_SimpleLighting_LightColor, UNIF_FragColor, UNIF_Last};
+enum UNIFORM_UID {UNIF_ModelMat, UNIF_ViewMat, UNIF_ProjMat, UNIF_FragColor,
+    UNIF_SimpleLighting_ObjColor, UNIF_SimpleLighting_LightColor, UNIF_SimpleLighting_LightPos,
+    UNIF_SimpleLighting_EyePos, UNIF_SimpleLighting_SpecularMap, UNIF_SimpleLighting_DiffuseMap, UNIF_Last};
 
 struct shader_asset {
     struct {
