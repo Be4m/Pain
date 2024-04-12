@@ -8,24 +8,7 @@ struct mesh {
     uint32_t *index_buffer;
     size_t n_triangles, n_vertices;
 
-    float *_vertex_ptr;
-    uint32_t *_index_ptr;
-};
-
-struct abstract_mesh {
-    struct vertex {
-        float *vertex;
-        struct vertex *next;
-    };
-
-    struct triangle {
-        uint32_t triangle[3];
-        struct triangle *next;
-    };
-
-    struct vertex *vertices, *_vertices_head;
-    struct triangle *triangles, *_triangles_head;
-    size_t _sizeofvertices, _sizeoftriangles;
+    uint32_t _current_vert_i, _current_triangle_i;
 };
 
 void free_mesh(struct mesh *mesh);

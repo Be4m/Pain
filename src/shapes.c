@@ -15,60 +15,25 @@ static struct mesh create_mesh(size_t n_triangles, size_t n_vertices)
     r.n_vertices = n_vertices;
     r.n_triangles = n_triangles;
 
-    r.vertex_buffer = r._vertex_ptr = (float *)malloc(3 * n_vertices * sizeof(float));
-    r.index_buffer = r._index_ptr = (uint32_t *)malloc(3 * n_triangles * sizeof(uint32_t));
+    r.vertex_buffer = (float *)malloc(3 * n_vertices * sizeof(float));
+    r.index_buffer = (uint32_t *)malloc(3 * n_triangles * sizeof(uint32_t));
+
+    r._current_vert_i = 0;
+    r._current_triangle_i = 0;
 
     return r;
 }
 
-static struct abstract_mesh describe_mesh(const struct mesh *mesh)
+static void mesh_extend(struct mesh *mesh, size_t new_tri, size_t new_vert)
 {
-    struct abstract_mesh ab_mesh;
+    mesh->n_vertices += new_vert;
+    mesh->n_triangles += new_tri;
 
-    ab_mesh._sizeofvertices = mesh->n_vertices * sizeof(struct vertex);
-    ab_mesh._sizeoftriangles = mesh->n_triangles * sizeof(struct triangle);
+    const size_t new_vert_buffer_size = mesh->n_vertices * 3 * sizeof(float);
+    const size_t new_ind_buffer_size = mesh->n_triangles * 3 * sizeof(uint32_t);
 
-    ab_mesh.vertices = ab_mesh._vertices_head = (struct vertex *)malloc(ab_mesh._sizeofvertices);
-    ab_mesh.triangles = ab_mesh._triangles_head = (struct triangle *)malloc(ab_mesh._sizeoftriangles);
-
-    for (uint32_t i = 0; i < mesh->n_vertices; i++) {
-        for (uint32_t j = 0; j < 3; j++) {
-            ab_mesh.vertices[i].vertex[j] = mesh->vertex_buffer[i * 3 + j];
-        }
-
-        if (i < mesh->n_vertices - 1) {
-            ab_mesh.vertices[i].next = &ab_mesh.vertices[i + 1];
-        } else {
-            ab_mesh.vertices[i].next = NULL;
-            ab_mesh._vertices_head = &ab_mesh.vertices[i];
-        }
-    }
-
-    for (uint32_t u = 0; u < mesh->n_triangles; u++) {
-        for (uint32_t k = 0; k < 3; k++) {
-            ab_mesh.triangles[u].triangle[k] = mesh->index_buffer[u * 3 + k];
-        }
-
-        if (u < mesh->n_triangles - 1) {
-            ab_mesh.triangles[u].next = &ab_mesh.triangles[u + 1];
-        } else {
-            ab_mesh.triangles[u].next = NULL;
-            ab_mesh._triangles_head = &ab_mesh.triangles[u];
-        }
-    }
-
-    return ab_mesh;
-}
-
-static void abstract_mesh_insert_vertices(struct abstract_mesh *ab_mesh, size_t n_vertices, float vertices[][3], uint32_t new_index)
-{
-    struct vertex new_vert;
-    
-    ab_mesh->_sizeofvertices += n_vertices * sizeof(struct vertex);
-    struct vertex *ext_buff = realloc(ab_mesh->vertices, ab_mesh->_sizeofvertices);
-
-    for (uint32_t i = 0; i < n_vertices; i++) {
-    }
+    mesh->vertex_buffer = realloc(mesh->vertex_buffer, new_vert_buffer_size);
+    mesh->index_buffer = realloc(mesh->index_buffer, new_ind_buffer_size);
 }
 
 void free_mesh(struct mesh *mesh)
@@ -79,53 +44,130 @@ void free_mesh(struct mesh *mesh)
 
 static void mesh_add_vertex(struct mesh *mesh, vec3 vertex)
 {
-    if ((mesh->_vertex_ptr + 3 - mesh->vertex_buffer) / 3 > mesh->n_vertices) {
+    if (mesh->_current_vert_i >= mesh->n_vertices) {
         WARN("Appending another vertex to the mesh would exceed allocated buffer. Skipping vertex.");
         return;
     }
 
     for (uint32_t i = 0; i < 3; i++) {
-        *mesh->_vertex_ptr = vertex[i];
-        mesh->_vertex_ptr++;
+        mesh->vertex_buffer[mesh->_current_vert_i * 3 + i] = vertex[i];
     }
+    mesh->_current_vert_i++;
 }
 
 static void mesh_add_triangle(struct mesh *mesh, uint32_t triangle[3])
 {
-    if ((mesh->_index_ptr + 3 - mesh->index_buffer) / 3 > mesh->n_triangles) {
+    if (mesh->_current_triangle_i >= mesh->n_triangles) {
         WARN("Appending another index to the mesh would exceed allocated buffer. Skipping index.");
         return;
     }
 
     for (uint32_t i = 0; i < 3; i++) {
-        *mesh->_index_ptr = triangle[i];
-        mesh->_index_ptr++;
+        mesh->index_buffer[mesh->_current_triangle_i * 3 + i] = triangle[i];
     }
+    mesh->_current_triangle_i++;
 }
 
-static void mesh_supply_vertices(struct mesh *mesh, float vertices[][3])
+static void mesh_add_vertices(struct mesh *mesh, size_t n_vertices, float vertices[][3])
 {
-    for (uint32_t i = 0; i < mesh->n_vertices; i++) {
+    for (uint32_t i = 0; i < n_vertices; i++) {
         mesh_add_vertex(mesh, vertices[i]);
     }
 }
 
-static void mesh_supply_triangles(struct mesh *mesh, uint32_t triangles[][3])
+static void mesh_add_triangles(struct mesh *mesh, size_t n_triangles, uint32_t triangles[][3])
 {
-    for (uint32_t i = 0; i < mesh->n_triangles; i++) {
+    for (uint32_t i = 0; i < n_triangles; i++) {
         mesh_add_triangle(mesh, triangles[i]);
+    }
+}
+
+static inline void mesh_supply_vertices(struct mesh *mesh, float vertices[][3])
+{
+    mesh_add_vertices(mesh, mesh->n_vertices, vertices);
+}
+
+static inline void mesh_supply_triangles(struct mesh *mesh, uint32_t triangles[][3])
+{
+    mesh_add_triangles(mesh, mesh->n_triangles, triangles);
+}
+
+static void project_to_unit_sphere(struct mesh *mesh)
+{
+    for (uint32_t i = 0; i < mesh->n_vertices; i++) {
+        vec3 vert_pos;
+        for (uint32_t u = 0; u < 3; u++) {
+            vert_pos[u] = mesh->vertex_buffer[i * 3 + u];
+        }
+
+        float l = glm_vec3_norm(vert_pos);
+        glm_vec3_divs(vert_pos, l, vert_pos);
+
+        for (uint32_t j = 0; j < 3; j++) {
+            mesh->vertex_buffer[i * 3 + j] = vert_pos[j];
+        }
+    }
+}
+
+static void subdivide(struct mesh *mesh)
+{
+    const uint32_t n_tri = mesh->n_triangles;
+    const uint32_t n_new_tri = 3 * n_tri;
+    mesh_extend(mesh, n_new_tri, n_new_tri);
+
+    for (uint32_t i = 0; i < n_tri; i++) {
+        vec3 v_coords[3];
+        uint32_t tmp_indices[2];
+
+        for (uint32_t u = 0; u < 3; u++) {
+            for (uint32_t j = 0; j < 3; j++) {
+                v_coords[u][j] = mesh->vertex_buffer[mesh->index_buffer[i * 3 + u] * 3 + j];
+            }
+        }
+
+        vec3 v0, v1, v2;
+        glm_vec3_add(v_coords[0], v_coords[1], v0);
+        glm_vec3_divs(v0, 2, v0);
+
+        glm_vec3_add(v_coords[0], v_coords[2], v1);
+        glm_vec3_divs(v1, 2, v1);
+
+        glm_vec3_add(v_coords[1], v_coords[2], v2);
+        glm_vec3_divs(v2, 2, v2);
+
+        float new_vertices[][3] = {
+            {v0[0], v0[1], v0[2]},
+            {v1[0], v1[1], v1[2]},
+            {v2[0], v2[1], v2[2]}
+        };
+        uint32_t vert_i = mesh->_current_vert_i;
+        mesh_add_vertices(mesh, 3, new_vertices);
+
+        tmp_indices[0] = mesh->index_buffer[i * 3 + 1];
+        tmp_indices[1] = mesh->index_buffer[i * 3 + 2];
+
+        mesh->index_buffer[i * 3 + 1] = vert_i;
+        mesh->index_buffer[i * 3 + 2] = vert_i + 1;
+
+        uint32_t new_triangles[][3] = {
+            {vert_i,     vert_i + 1,     vert_i + 2},
+            {vert_i,     tmp_indices[0], vert_i + 2},
+            {vert_i + 2, tmp_indices[1], vert_i + 1}
+        };
+        mesh_add_triangles(mesh, 3, new_triangles);
     }
 }
 
 struct mesh generate_icosphere(size_t n_subdivisions)
 {
-    const struct mesh icosahedron = create_icosahedron();
-    struct abstract_mesh wrk_mesh = describe_mesh(&icosahedron);
+    struct mesh mesh = create_icosahedron();
 
-    for (uint32_t i = 0; i < icosahedron.n_triangles; i++) {
-        // We need to create 3 new vertices
-
+    for (uint32_t i = 0; i < n_subdivisions; i++) {
+        subdivide(&mesh);
     }
+
+    project_to_unit_sphere(&mesh);
+    return mesh;
 }
 
 inline struct mesh create_icosahedron(void)

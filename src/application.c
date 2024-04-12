@@ -40,7 +40,7 @@ void application_run(struct app_settings *settings)
     };
     CAMERA = create_simple_camera(&cam_settings);
 
-    struct mesh icosphere = create_icosahedron();
+    struct mesh icosphere = generate_icosphere(3);
 
     uint32_t vertex_buffer;
     glGenBuffers(1, &vertex_buffer);
