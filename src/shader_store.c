@@ -1,7 +1,6 @@
 #include "shader_store.h"
 
 #include <stdint.h>
-#include <stdlib.h>
 
 // #define SHDR_BIN_SYM_PREFIX binary_shaders
 #define STANDARD_UNIFORMS [UNIF_ModelMat] = "model", \

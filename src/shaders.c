@@ -5,8 +5,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 
 #include <GL/glew.h>
 
@@ -137,9 +135,7 @@ static int shader_store_load_sources(shdr_store_t shaders)
 
             buf_len++;
             if (buf_len > SHADER_SIZ_CHUNK && buf_len % SHADER_SIZ_CHUNK == 1) {
-                n_chunks++;
-
-                if ((buffer = realloc(buffer, n_chunks * SHADER_SIZ_CHUNK)) == NULL) {
+                if ((buffer = realloc(buffer, ++n_chunks * SHADER_SIZ_CHUNK)) == NULL) {
                     return -1;
                 }
             }

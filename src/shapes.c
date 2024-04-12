@@ -3,8 +3,6 @@
 #include "common.h"
 
 #include <stdlib.h>
-#include <stdarg.h>
-#include <math.h>
 
 #include <cglm/cglm.h>
 

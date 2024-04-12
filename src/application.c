@@ -3,14 +3,11 @@
 #include "common.h"
 #include "graphics.h"
 #include "shaders.h"
-#include "shapes.h"
 #include "camera.h"
 
 #include <stdlib.h>
 
-#include <stb_image.h>
 #include <GLFW/glfw3.h>
-#include <cglm/cglm.h>
 
 static struct _camera CAMERA;
 
@@ -40,40 +37,6 @@ void application_run(struct app_settings *settings)
     };
     CAMERA = create_simple_camera(&cam_settings);
 
-    struct mesh icosphere = generate_icosphere(3);
-
-    uint32_t vertex_buffer;
-    glGenBuffers(1, &vertex_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * icosphere.n_vertices, icosphere.vertex_buffer, GL_STATIC_DRAW);
-
-    uint32_t vertex_array;
-    glGenVertexArrays(1, &vertex_array);
-    glBindVertexArray(vertex_array);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
-    glEnableVertexAttribArray(0);
-
-    uint32_t index_buffer;
-    glGenBuffers(1, &index_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 3 * icosphere.n_triangles, icosphere.index_buffer, GL_STATIC_DRAW);
-
-    free_mesh(&icosphere);
-
-    struct shader_program *shader = SHADER_PROGRAMS[SPRG_Standard];
-    glUseProgram(shader->obj);
-
-    mat4 view, proj, model = GLM_MAT4_IDENTITY_INIT;
-    camera_produce_projection_matrix(&CAMERA, proj);
-
-    glUniformMatrix4fv(shader->uniform_loc[UNIF_ModelMat], 1, GL_FALSE, (float *)model);
-    glUniformMatrix4fv(shader->uniform_loc[UNIF_ProjMat], 1, GL_FALSE, (float *)proj);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    vec3 colour = {1.0f, 0.f, 0.f};
-    glUniform3fv(shader->uniform_loc[UNIF_FragColor], 1, colour);
-
     float last_frame = 0.0f;
 
     while (!glfwWindowShouldClose(settings->_window)) {
@@ -86,13 +49,7 @@ void application_run(struct app_settings *settings)
         process_input(settings->_window);
         camera_process_input(settings->_window, &CAMERA);
 
-        camera_produce_view_matrix(&CAMERA, view);
-        glUniformMatrix4fv(shader->uniform_loc[UNIF_ViewMat], 1, GL_FALSE, (float *)view);
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-        glDrawElements(GL_TRIANGLES, icosphere.n_triangles * 3, GL_UNSIGNED_INT, 0);
 
         glfwPollEvents();
         glfwSwapBuffers(settings->_window);
