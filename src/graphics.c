@@ -2,6 +2,7 @@
 
 #include "application.h"
 #include "shaders.h"
+#include "common.h"
 
 static void framebuffer_size_callback(GLFWwindow *window, int32_t new_width, int32_t new_height);
 
@@ -9,9 +10,12 @@ static void framebuffer_size_callback(GLFWwindow *window, int32_t new_width, int
 void graphics_cleanup(void)
 {
     for (uint32_t i = 0; i < SPRG_Last; i++) {
+#ifdef _DEBUG
         if (SHADER_PROGRAMS[i] == NULL) {
+            WARN("Found undeclared shader program.");
             continue;
         }
+#endif
 
         glDeleteProgram(SHADER_PROGRAMS[i]->obj);
     }
