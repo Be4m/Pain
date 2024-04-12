@@ -3,7 +3,7 @@
 #include "common.h"
 #include "graphics.h"
 #include "shaders.h"
-#include "shapes.c"
+#include "shapes.h"
 #include "camera.h"
 
 #include <stdlib.h>
@@ -39,80 +39,40 @@ void application_run(struct app_settings *settings)
         .aspect_ratio = (float)settings->win_width/(float)settings->win_height
     };
     CAMERA = create_simple_camera(&cam_settings);
- 
+
+    struct mesh icosphere = create_icosahedron();
+
     uint32_t vertex_buffer;
     glGenBuffers(1, &vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(CUBE_VERTICES), CUBE_VERTICES, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * icosphere.n_vertices, icosphere.vertex_buffer, GL_STATIC_DRAW);
 
-    uint32_t vertex_array_obj;
-    glGenVertexArrays(1, &vertex_array_obj);
-    glBindVertexArray(vertex_array_obj);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), NULL);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
+    uint32_t vertex_array;
+    glGenVertexArrays(1, &vertex_array);
+    glBindVertexArray(vertex_array);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
     glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-    
 
-    int32_t width, height, n_channels;
-    unsigned char *specular_data = stbi_load("textures/container2_specular.png", &width, &height, &n_channels, 0);
+    uint32_t index_buffer;
+    glGenBuffers(1, &index_buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 3 * icosphere.n_triangles, icosphere.index_buffer, GL_STATIC_DRAW);
 
-    uint32_t specular_tex;
-    glGenTextures(1, &specular_tex);
-    glBindTexture(GL_TEXTURE_2D, specular_tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, specular_data);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    free_mesh(&icosphere);
 
-    unsigned char *diffuse_data = stbi_load("textures/container2.png", &width, &height, &n_channels, 0);
+    struct shader_program *shader = SHADER_PROGRAMS[SPRG_Standard];
+    glUseProgram(shader->obj);
 
-    uint32_t diffuse_tex;
-    glGenTextures(1, &diffuse_tex);
-    glBindTexture(GL_TEXTURE_2D, diffuse_tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, diffuse_data);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    mat4 view, proj, model = GLM_MAT4_IDENTITY_INIT;
+    camera_produce_projection_matrix(&CAMERA, proj);
 
-    stbi_image_free(specular_data);
-    stbi_image_free(diffuse_data);
+    glUniformMatrix4fv(shader->uniform_loc[UNIF_ModelMat], 1, GL_FALSE, (float *)model);
+    glUniformMatrix4fv(shader->uniform_loc[UNIF_ProjMat], 1, GL_FALSE, (float *)proj);
 
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    struct shader_program *obj_shader_prog = SHADER_PROGRAMS[SPRG_SimpleLighting];
-    struct shader_program *light_shader_prog = SHADER_PROGRAMS[SPRG_Standard];
-
-    mat4 proj; camera_produce_projection_matrix(&CAMERA, proj);
-    vec3 light_color = {1.0f, 1.0, 1.0f};
-    vec3 light_pos = {0.3f, 1.8f, 3.0f};
-
-
-    glUseProgram(obj_shader_prog->obj);
-
-    mat4 obj_model = GLM_MAT4_IDENTITY_INIT;
-    glUniformMatrix4fv(obj_shader_prog->uniform_loc[UNIF_ModelMat], 1, GL_FALSE, (float *)obj_model);
-    glUniformMatrix4fv(obj_shader_prog->uniform_loc[UNIF_ProjMat], 1, GL_FALSE, (float *)proj);
-
-    vec3 obj_color = {.2f, 0.2f, 0.8f};
-    glUniform3fv(obj_shader_prog->uniform_loc[UNIF_SimpleLighting_ObjColor], 1, obj_color);
-    glUniform3fv(obj_shader_prog->uniform_loc[UNIF_SimpleLighting_LightColor], 1, light_color);
-    glUniform3fv(obj_shader_prog->uniform_loc[UNIF_SimpleLighting_LightPos], 1, light_pos);
-
-    glUniform1i(obj_shader_prog->uniform_loc[UNIF_SimpleLighting_SpecularMap], 1);
-    glUniform1i(obj_shader_prog->uniform_loc[UNIF_SimpleLighting_DiffuseMap], 0);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, diffuse_tex);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, specular_tex);
-
-
-    glUseProgram(light_shader_prog->obj);
-
-    mat4 light_model = GLM_MAT4_IDENTITY_INIT;
-    glm_translate(light_model, light_pos);
-    glUniformMatrix4fv(light_shader_prog->uniform_loc[UNIF_ModelMat], 1, GL_FALSE, (float *)light_model);
-    glUniformMatrix4fv(light_shader_prog->uniform_loc[UNIF_ProjMat], 1, GL_FALSE, (float *)proj);
-
-    glUniform3fv(light_shader_prog->uniform_loc[UNIF_FragColor], 1, light_color);
+    vec3 colour = {1.0f, 0.f, 0.f};
+    glUniform3fv(shader->uniform_loc[UNIF_FragColor], 1, colour);
 
     float last_frame = 0.0f;
 
@@ -126,22 +86,14 @@ void application_run(struct app_settings *settings)
         process_input(settings->_window);
         camera_process_input(settings->_window, &CAMERA);
 
+        camera_produce_view_matrix(&CAMERA, view);
+        glUniformMatrix4fv(shader->uniform_loc[UNIF_ViewMat], 1, GL_FALSE, (float *)view);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // CAMERA
-        mat4 view;
-        camera_produce_view_matrix(&CAMERA, view);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+        glDrawElements(GL_TRIANGLES, icosphere.n_triangles * 3, GL_UNSIGNED_INT, 0);
 
-        glUseProgram(obj_shader_prog->obj);
-        glUniformMatrix4fv(obj_shader_prog->uniform_loc[UNIF_ViewMat], 1, GL_FALSE, (float *)view);
-        glUniform3fv(obj_shader_prog->uniform_loc[UNIF_SimpleLighting_EyePos], 1, CAMERA.position);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        glUseProgram(light_shader_prog->obj);
-        glUniformMatrix4fv(light_shader_prog->uniform_loc[UNIF_ViewMat], 1, GL_FALSE, (float *)view);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        // MAIN LOOP
         glfwPollEvents();
         glfwSwapBuffers(settings->_window);
     }
