@@ -3,8 +3,11 @@ MD=mkdir
 
 INCLUDE=-Iinclude -Iinclude/vendor
 LIB=-Llib -lglfw3 -lgdi32 -lglew32s -lopengl32
-CFLAGS=$(INCLUDE) -std=c99 -Wall -DGLEW_STATIC -g -D_DEBUG
+CCFLAGS=$(INCLUDE) -std=c99 -Wall -DGLEW_STATIC
 LDFLAGS=$(LIB)
+
+EXE=pain.exe
+BUILD_DIR=build
 
 SRC=src/main.c src/application.c \
 	src/graphics.c src/shaders.c src/shader_store.c \
@@ -17,26 +20,57 @@ SHADERS=shaders/standard_texture.frag shaders/standard_texture.vert \
 	shaders/simple_lighting.frag shaders/simple_lighting.vert \
 	shaders/simple.frag
 
-SHADER_OBJ=$(patsubst shaders/%, obj/shaders/%.o, $(SHADERS))
-OBJ=$(patsubst src/%.c, obj/%.o, $(SRC)) $(SHADER_OBJ)
-	
+SHADER_OBJS=$(patsubst shaders/%, obj/shaders/%.o, $(SHADERS))
+OBJS=$(patsubst src/%.c, obj/%.o, $(SRC)) $(SHADER_OBJS)
 
-all: pain.exe
+DBGDIR=$(addsuffix /debug, $(BUILD_DIR))
+DBGEXE=$(DBGDIR)/$(EXE)
+DBGOBJS=$(addprefix $(DBGDIR)/, $(OBJS))
+DBGCCFLAGS=-g -D_DEBUG
+
+RELDIR=$(addsuffix /release, $(BUILD_DIR))
+RELEXE=$(RELDIR)/$(EXE)
+RELOBJS=$(addprefix $(RELDIR)/, $(OBJS))
+RELCCFLAGS=-O3
+RELLDFLAGS=-mwindows
+
+
+.PHONY: clean remake
+
+all: debug
+
 remake: clean all
+run: all
+	$(DBGEXE)
 
-obj/%.o: src/%.c
+clean:
+	rmdir /s /q $(BUILD_DIR)
+	del $(EXE)
+
+# == DEBUG ==
+debug: $(DBGEXE)
+
+$(DBGEXE): $(DBGOBJS)
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+$(DBGDIR)/obj/%.o: src/%.c
 	-@ if NOT EXIST "$(@D)" $(MD) "$(@D)"
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CCFLAGS) $(DBGCCFLAGS) -c $< -o $@
 
-obj/shaders/%.o obj/shaders/%.o: shaders/%
+$(DBGDIR)/obj/shaders/%.o: shaders/%
 	-@ if NOT EXIST "$(@D)" $(MD) "$(@D)"
 	ld -r -b binary -o $@ $^
 
-pain.exe: $(OBJ)
-	$(CC) -o $@ $^ $(LDFLAGS)
+# == RELEASE ==
+release: $(RELEXE)
 
-clean:
-	rmdir /s /q obj
-	del pain.exe
+$(RELEXE): $(RELOBJS)
+	$(CC) -o $@ $^ $(LDFLAGS) $(RELLDFLAGS)
 
-.PHONY: clean remake
+$(RELDIR)/obj/%.o: src/%.c
+	-@ if NOT EXIST "$(@D)" $(MD) "$(@D)"
+	$(CC) $(CCFLAGS) $(RELCCFLAGS) -c $< -o $@
+
+$(RELDIR)/obj/shaders/%.o: shaders/%
+	-@ if NOT EXIST "$(@D)" $(MD) "$(@D)"
+	ld -r -b binary -o $@ $^
